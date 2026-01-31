@@ -23,10 +23,13 @@ public class TranscriptionService {
     /**
      * Converts the input audio file to a Deepgram-compatible WAV and transcribes it
      */
-    public String transcribe(File audioFile) throws IOException, InterruptedException {
-        File wavFile = convertToWav(audioFile);
+    public String transcribe(MultipartFile file) throws IOException {
 
-        RequestBody body = RequestBody.create(wavFile, MediaType.parse("audio/wav"));
+        RequestBody body = RequestBody.create(
+                file.getBytes(),
+                MediaType.parse(file.getContentType())
+        );
+
         Request request = new Request.Builder()
                 .url(DEEPGRAM_URL)
                 .post(body)
@@ -35,15 +38,16 @@ public class TranscriptionService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("Deepgram transcription failed: " + response.body().string());
+                throw new IOException("Deepgram failed: " + response.body().string());
             }
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(response.body().string());
-            return jsonNode.at("/results/channels/0/alternatives/0/transcript").asText();
+            return jsonNode
+                    .at("/results/channels/0/alternatives/0/transcript")
+                    .asText();
         }
     }
-
     /**
      * Converts any audio file to WAV 16kHz mono PCM using ffmpeg
      */

@@ -28,35 +28,29 @@ public class FileUploadController {
 
     @PostMapping("/upload")
     public ResponseEntity<FileUploadResponseDTO> uploadFile(@RequestParam("file") MultipartFile file) {
-        String originalFileName = file.getOriginalFilename();
-
         try {
-            // Save uploaded file to temp file
-            File tempFile = File.createTempFile("upload_", "_" + originalFileName);
-            file.transferTo(tempFile);
+            String transcript = transcriptionService.transcribe(file);
 
-            // Transcribe the file
-            String transcript = transcriptionService.transcribe(tempFile);
-
-            // Save to DB
             UploadedFile uploadedFile = new UploadedFile();
-            uploadedFile.setOriginalFileName(originalFileName);
+            uploadedFile.setOriginalFileName(file.getOriginalFilename());
             uploadedFile.setTranscript(transcript);
-            uploadedFile = uploadedFileRepository.save(uploadedFile); // Save and get generated ID
+            uploadedFile = uploadedFileRepository.save(uploadedFile);
 
-            // Return response
-            FileUploadResponseDTO response = new FileUploadResponseDTO(
-                    uploadedFile.getId(),
-                    uploadedFile.getOriginalFileName(),
-                    uploadedFile.getTranscript()
+            return ResponseEntity.ok(
+                    new FileUploadResponseDTO(
+                            uploadedFile.getId(),
+                            uploadedFile.getOriginalFileName(),
+                            uploadedFile.getTranscript()
+                    )
             );
 
-            return ResponseEntity.ok(response);
-
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500)
-                    .body(new FileUploadResponseDTO(null, originalFileName, "Transcription failed: " + e.getMessage()));
+                    .body(new FileUploadResponseDTO(null, file.getOriginalFilename(),
+                            "Transcription failed: " + e.getMessage()));
         }
     }
+
+
 }
