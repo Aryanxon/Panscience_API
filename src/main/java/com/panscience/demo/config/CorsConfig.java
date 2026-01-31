@@ -12,7 +12,8 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(
                         "http://localhost:3000",
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "https://panscience-frontend.vercel.app"
                         // add your frontend domains here
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
